@@ -1,6 +1,6 @@
 use std::env;
 use std::error::Error;
-use std::fs::{create_dir_all, File};
+use std::fs::{create_dir_all, File, read_dir};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -47,6 +47,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         .include(out_dir.join("include"))
         .include(dir.join("include"))
         .include(dir.join("third_party/md5"))
+        .include(dir.join("third_party/rapidyaml/rapidyaml/src"))
+        .include(dir.join("third_party/rapidyaml/rapidyaml/ext/c4core/src"))
         .include(dir.join("third_party/json"));
 
     for f in &jsonnet_core {
@@ -54,6 +56,18 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     c.file(dir.join("third_party/md5/md5.cpp"));
+    for entry in read_dir(dir.join("third_party/rapidyaml/rapidyaml/src/c4/yml"))? {
+        let entry = entry?;
+        if entry.path().extension().and_then(|v| v.to_str()) == Some("cpp") {
+            c.file(entry.path());
+        }
+    }
+    for entry in read_dir(dir.join("third_party/rapidyaml/rapidyaml/ext/c4core/src/c4"))? {
+        let entry = entry?;
+        if entry.path().extension().and_then(|v| v.to_str()) == Some("cpp") {
+            c.file(entry.path());
+        }
+    }
 
     c.compile("libjsonnet.a");
 
